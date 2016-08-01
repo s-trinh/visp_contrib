@@ -342,6 +342,18 @@ main(int argc, const char ** argv)
     vpImageIo::write(I_color_unsharp_mask, filename);
 
 
+    //CLAHE
+    vpImage<vpRGBa> I_color_clahe;
+    t = vpTime::measureTimeMs();
+    vp::clahe(I_color, I_color_clahe);
+    t = vpTime::measureTimeMs() - t;
+    std::cout << "Time to do color CLAHE: " << t << " ms" << std::endl;
+
+    //Save CLAHE
+    filename = vpIoTools::createFilePath(opath, "Klimt_CLAHE.ppm");
+    vpImageIo::write(I_color_clahe, filename);
+
+
 
     //
     //Test grayscale function using image0000.pgm
@@ -415,6 +427,18 @@ main(int argc, const char ** argv)
     //Save unsharpMask
     filename = vpIoTools::createFilePath(opath, "image0000_unsharp_mask.pgm");
     vpImageIo::write(I_unsharp_mask, filename);
+
+
+    //CLAHE
+    vpImage<unsigned char> I_clahe;
+    t = vpTime::measureTimeMs();
+    vp::clahe(I, I_clahe);
+    t = vpTime::measureTimeMs() - t;
+    std::cout << "Time to do grayscale CLAHE: " << t << " ms" << std::endl;
+
+    //Save CLAHE
+    filename = vpIoTools::createFilePath(opath, "image0000_CLAHE.pgm");
+    vpImageIo::write(I_clahe, filename);
 
 
     return 0;

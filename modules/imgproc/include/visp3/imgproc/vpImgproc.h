@@ -59,6 +59,12 @@ namespace vp
   VISP_EXPORT void adjust(const vpImage<unsigned char> &I1, vpImage<unsigned char> &I2, const double alpha, const double beta);
   VISP_EXPORT void adjust(vpImage<vpRGBa> &I, const double alpha, const double beta);
   VISP_EXPORT void adjust(const vpImage<vpRGBa> &I1, vpImage<vpRGBa> &I2, const double alpha, const double beta);
+  
+  VISP_EXPORT void clahe(const vpImage<unsigned char> &I1, vpImage<unsigned char> &I2, const unsigned int blockRadius=150,
+      const unsigned int bins=256, const double slope=3.0, const bool fast=true);
+
+  VISP_EXPORT void clahe(const vpImage<vpRGBa> &I1, vpImage<vpRGBa> &I2, const unsigned int blockRadius=150,
+      const unsigned int bins=256, const double slope=3.0, const bool fast=true);
 
   VISP_EXPORT void equalizeHistogram(vpImage<unsigned char> &I);
   VISP_EXPORT void equalizeHistogram(const vpImage<unsigned char> &I1, vpImage<unsigned char> &I2);
