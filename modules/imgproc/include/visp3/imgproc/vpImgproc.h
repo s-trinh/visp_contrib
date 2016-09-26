@@ -99,6 +99,9 @@ namespace vp
 
   VISP_EXPORT void connectedComponents(const vpImage<unsigned char> &I, vpImage<int> &labels, int &nbComponents,
                                        const vpConnectedConnexityType &connexity=CONNECTED_CONNEXITY_4);
+
+  VISP_EXPORT void connectedComponents2(const vpImage<unsigned char> &I, vpImage<int> &labels, int &nbComponents,
+                                       const vpConnectedConnexityType &connexity=CONNECTED_CONNEXITY_4);
 }
 
 #endif

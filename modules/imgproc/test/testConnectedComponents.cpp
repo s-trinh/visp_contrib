@@ -139,6 +139,26 @@ bool getOptions(int argc, const char **argv, std::string &ipath, std::string &op
   return true;
 }
 
+void printMatrix(const vpImage<int> &I, const std::string &name) {
+  std::cout << "\n" << name << ":" << std::endl;
+  for(unsigned int i = 0; i < I.getHeight(); i++) {
+    for(unsigned int j = 0; j < I.getWidth(); j++) {
+      std::cout << I[i][j] << " ";
+    }
+    std::cout << std::endl;
+  }
+}
+
+void printMatrix(const vpImage<unsigned char> &I, const std::string &name) {
+  std::cout << "\n" << name << ":" << std::endl;
+  for(unsigned int i = 0; i < I.getHeight(); i++) {
+    for(unsigned int j = 0; j < I.getWidth(); j++) {
+      std::cout << static_cast<unsigned int>(I[i][j]) << " ";
+    }
+    std::cout << std::endl;
+  }
+}
+
 int
 main(int argc, const char ** argv)
 {
@@ -327,6 +347,28 @@ main(int argc, const char ** argv)
       throw vpException(vpException::fatalError, "(labels_connex8_opencv != labels_connex8)");
     }
 #endif
+
+
+    unsigned char image_data[9*17] = {
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0,
+      0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0,
+      0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0,
+      0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0,
+      0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0,
+      0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0,
+      0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+    };
+
+    vpImage<unsigned char> I_test(image_data, 9, 17, true);
+    vpImage<int> labels_test_4;
+    int nbComponents_4;
+    vp::connectedComponents2(I_test, labels_test_4, nbComponents_4, vp::CONNECTED_CONNEXITY_4);
+//    vp::connectedComponents2(I_test, labels_test_4, nbComponents_4, vp::CONNECTED_CONNEXITY_8);
+
+    printMatrix(labels_test_4, "labels_test_4");
+
 
     return EXIT_SUCCESS;
   }
