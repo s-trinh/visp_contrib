@@ -290,24 +290,40 @@ void vp::connectedComponents2(const vpImage<unsigned char> &I, vpImage<int> &lab
     }
   }
 
-  std::cout << std::endl;
-  for (unsigned int i = 1; i < labels_copy.getHeight()-1; i++) {
-    for (unsigned int j = 1; j < labels_copy.getWidth()-1; j++) {
-      std::cout << labels_copy[i][j] << " ";
-    }
+//  std::cout << std::endl;
+//  for (unsigned int i = 1; i < labels_copy.getHeight()-1; i++) {
+//    for (unsigned int j = 1; j < labels_copy.getWidth()-1; j++) {
+//      std::cout << labels_copy[i][j] << " ";
+//    }
 
-    std::cout << std::endl;
+//    std::cout << std::endl;
+//  }
+
+//  std::cout << std::endl;
+//  for (std::map<int, std::set<int> >::const_iterator it = equivalent_labels.begin(); it != equivalent_labels.end(); ++it) {
+//    std::cout << it->first << " is equivalent to ";
+//    for (std::set<int>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++it2) {
+//      std::cout << *it2 << ", ";
+//    }
+
+//    std::cout << std::endl;
+//  }
+
+//  current_label = 1;
+  std::set<int> reassign_labels;
+  for (std::map<int, std::set<int> >::iterator it1 = equivalent_labels.begin(); it1 != equivalent_labels.end(); ++it1) {
+    reassign_labels.insert(*it1->second.begin());
   }
 
-  std::cout << std::endl;
-  for (std::map<int, std::set<int> >::const_iterator it = equivalent_labels.begin(); it != equivalent_labels.end(); ++it) {
-    std::cout << it->first << " is equivalent to ";
-    for (std::set<int>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++it2) {
-      std::cout << *it2 << ", ";
-    }
+//  std::cout << std::endl;
+//  for (std::map<int, std::set<int> >::const_iterator it = equivalent_labels.begin(); it != equivalent_labels.end(); ++it) {
+//    std::cout << it->first << " is equivalent to ";
+//    for (std::set<int>::const_iterator it2 = it->second.begin(); it2 != it->second.end(); ++it2) {
+//      std::cout << *it2 << ", ";
+//    }
 
-    std::cout << std::endl;
-  }
+//    std::cout << std::endl;
+//  }
 
   //Second pass
   for (unsigned int cpt1 = 0; cpt1 < I.getHeight(); cpt1++) {
@@ -317,7 +333,9 @@ void vp::connectedComponents2(const vpImage<unsigned char> &I, vpImage<int> &lab
       unsigned int j = cpt2+1;
 
       if (I_copy[i][j]) {
-        labels_copy[i][j] = *equivalent_labels[labels_copy[i][j]].begin();
+//        labels_copy[i][j] = *equivalent_labels[labels_copy[i][j]].begin();
+        labels_copy[i][j] = std::distance(reassign_labels.begin(),
+                                          reassign_labels.find(*equivalent_labels[labels_copy[i][j]].begin())) + 1;
       }
     }
   }
@@ -326,5 +344,5 @@ void vp::connectedComponents2(const vpImage<unsigned char> &I, vpImage<int> &lab
     memcpy(labels[i], labels_copy[i+1]+1, sizeof(int)*labels.getWidth());
   }
 
-  nbComponents = current_label - 1;
+  nbComponents = reassign_labels.size();
 }

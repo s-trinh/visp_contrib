@@ -349,6 +349,9 @@ main(int argc, const char ** argv)
 #endif
 
 
+#define TEST_DATA 0
+
+#if TEST_DATA
     unsigned char image_data[9*17] = {
       0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
       0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0,
@@ -362,12 +365,24 @@ main(int argc, const char ** argv)
     };
 
     vpImage<unsigned char> I_test(image_data, 9, 17, true);
+#else
+    vpImage<unsigned char> I_test = I;
+#endif
+
     vpImage<int> labels_test_4;
     int nbComponents_4;
+    double t2 = vpTime::measureTimeMs();
     vp::connectedComponents2(I_test, labels_test_4, nbComponents_4, vp::CONNECTED_CONNEXITY_4);
 //    vp::connectedComponents2(I_test, labels_test_4, nbComponents_4, vp::CONNECTED_CONNEXITY_8);
+    t2 = vpTime::measureTimeMs() - t2;
+    std::cout << "t2=" << t2 << " ms" << std::endl;
+    std::cout << "nbComponents_4=" << nbComponents_4 << std::endl;
 
+#if TEST_DATA
     printMatrix(labels_test_4, "labels_test_4");
+#else
+    std::cout << "(labels_test_4 == labels_connex4)? " << (labels_test_4 == labels_connex4) << std::endl;
+#endif
 
 
     return EXIT_SUCCESS;
