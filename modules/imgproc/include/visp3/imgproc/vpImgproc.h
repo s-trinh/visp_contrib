@@ -47,6 +47,7 @@
 #define __vpImgproc_h__
 
 #include <visp3/core/vpImage.h>
+#include <visp3/imgproc/vpContours.h>
 
 
 namespace vp
@@ -99,6 +100,16 @@ namespace vp
 
   VISP_EXPORT void connectedComponents(const vpImage<unsigned char> &I, vpImage<int> &labels, int &nbComponents,
                                        const vpConnectedConnexityType &connexity=CONNECTED_CONNEXITY_4);
+
+
+//  typedef enum {
+//    CONNECTED_CONNEXITY_4, /*!< For a given pixel 4 neighbors are considered (left,
+//                      right, up, down) */
+//    CONNECTED_CONNEXITY_8 /*!< For a given pixel 8 neighbors are considered (left,
+//                     right, up, down, and the 4 pixels located on the diagonal) */
+//  } vpConnectedConnexityType;
+
+//  VISP_EXPORT void extractContours(const vpImage<unsigned char> &I);
 }
 
 #endif
