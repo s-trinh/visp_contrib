@@ -143,7 +143,16 @@ bool getOptions(int argc, const char **argv, std::string &ipath, std::string &op
 
 void printImage(const vpImage<unsigned char> &I, const std::string &name) {
   std::cout << "\n" << name << ":" << std::endl;
+
+  std::cout << "   ";
+  for (unsigned int j = 0; j < I.getWidth(); j++) {
+    std::cout << std::setfill(' ') << std::setw(2) << j << " ";
+  }
+  std::cout << std::endl;
+
   for (unsigned int i = 0; i < I.getHeight(); i++) {
+    std::cout << std::setfill(' ') << std::setw(2) << i << " ";
+
     for (unsigned int j = 0; j < I.getWidth(); j++) {
       std::cout << std::setfill(' ') << std::setw(2) << static_cast<unsigned int>(I[i][j]) << " ";
     }
@@ -152,14 +161,16 @@ void printImage(const vpImage<unsigned char> &I, const std::string &name) {
   }
 }
 
-void printMat(const cv::Mat &mat, const std::string &name) {
-  std::cout << "\n" << name << ":" << std::endl;
-  for (int i = 0; i < mat.rows; i++) {
-    for (int j = 0; j < mat.cols; j++) {
-      std::cout << std::setfill(' ') << std::setw(2) << static_cast<unsigned int>(mat.at<uchar>(i, j)) << " ";
-    }
+void displayContourInfo(const vp::vpContour &contour, const int level, std::vector<std::vector<vpImagePoint> > &contours) {
+  std::cout << "\nContour:" << std::endl;
+  std::cout << "\tlevel: " << level << std::endl;
+  std::cout << "\tcontour type: " << (contour.m_contourType == vp::CONTOUR_OUTER ? "outer contour" : "hole contour") << std::endl;
+  std::cout << "\tnb children: " << contour.m_children.size() << std::endl;
 
-    std::cout << std::endl;
+  contours.push_back(contour.m_points);
+
+  for (std::vector<vp::vpContour *>::const_iterator it = contour.m_children.begin(); it != contour.m_children.end(); ++it) {
+    displayContourInfo(**it, level+1, contours);
   }
 }
 
@@ -251,43 +262,96 @@ main(int argc, const char ** argv)
     // Here starts really the test
     //
 
-    unsigned char image_data[8*9] = {
-      0, 0, 0, 0, 0, 0, 0, 0, 0,
-      0, 0, 1, 1, 0, 0, 1, 0, 0,
-      0, 1, 1, 1, 1, 1, 1, 0, 0,
-      0, 0, 0, 1, 1, 1, 1, 1, 0,
-      0, 0, 1, 0, 0, 1, 0, 0, 1,
-      0, 0, 1, 0, 0, 0, 1, 0, 0,
-      0, 0, 0, 1, 1, 1, 0, 0, 0,
-      0, 0, 0, 0, 0, 0, 0, 0, 0
+    unsigned char image_data[14*10] = {
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 1, 1, 0, 0, 1, 0, 0, 0,
+      0, 1, 1, 1, 1, 1, 1, 0, 0, 0,
+      0, 0, 0, 1, 1, 1, 1, 1, 0, 0,
+      0, 0, 1, 0, 0, 1, 0, 0, 1, 0,
+      0, 0, 1, 0, 0, 0, 1, 0, 0, 0,
+      0, 0, 0, 1, 1, 1, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 1, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 1, 1, 1, 1, 0, 0, 0, 0,
+      0, 0, 1, 0, 0, 0, 1, 0, 0, 0,
+      0, 0, 1, 0, 1, 1, 0, 1, 0, 0,
+      0, 0, 0, 1, 0, 0, 1, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     };
 
-    vpImage<unsigned char> I(image_data, 8, 9, true);
+#define TEST_DATA 0
+#if TEST_DATA
+    vpImage<unsigned char> I(image_data, 14, 10, true);
     printImage(I, "I");
+#else
+    //Read Klimt.ppm
+    filename = vpIoTools::createFilePath(ipath, "ViSP-images/Klimt/Klimt.pgm");
+    vpImage<unsigned char> I;
+    std::cout << "Read image: " << filename << std::endl;
+    vpImageIo::read(I, filename);
+    vpImageTools::binarise(I, (unsigned char) 127, (unsigned char) 255, (unsigned char) 0, (unsigned char) 1, (unsigned char) 1);
+
+    //Remove 1-pixel border
+    for (unsigned int i = 0; i < I.getHeight(); i++) {
+      if (i == 0 || i == I.getHeight()-1) {
+        for (unsigned int j = 0; j < I.getWidth(); j++) {
+          I[i][j] = 0;
+        }
+      } else {
+        I[i][0] = 0;
+        I[i][I.getWidth()-1] = 0;
+      }
+    }
+
+    vpImage<unsigned char> I2(I.getHeight(), I.getWidth());
+    for (unsigned int cpt = 0; cpt < I2.getSize(); cpt++) {
+      I2.bitmap[cpt] = 255*I.bitmap[cpt];
+    }
+    filename = vpIoTools::createFilePath(opath, "Klimt_contours_binarise.pgm");
+    vpImageIo::write(I2, filename);
+#endif
 
     cv::Mat matImg;
     vpImageConvert::convert(I, matImg);
 
-    std::vector<std::vector<cv::Point> > contours;
-    cv::findContours(matImg, contours, cv::RETR_EXTERNAL, cv::CHAIN_APPROX_NONE);
+    std::vector<std::vector<cv::Point> > contours_opencv;
+    double t_opencv = vpTime::measureTimeMs();
+    cv::findContours(matImg, contours_opencv, cv::RETR_TREE, cv::CHAIN_APPROX_NONE);
+    t_opencv = vpTime::measureTimeMs() - t_opencv;
+    std::cout << "OpenCV: nb contours=" << contours_opencv.size() << " ; t_opencv=" << t_opencv << " ms" << std::endl;
 
-    cv::Mat matImg_drawContours = cv::Mat::zeros(matImg.size(), CV_8U);
-    int cpt = 1;
-    for (std::vector<std::vector<cv::Point> >::const_iterator it1 = contours.begin(); it1 != contours.end(); ++it1) {
-      for (std::vector<cv::Point>::const_iterator it2 = it1->begin(); it2 != it1->end(); ++it2, cpt++) {
-        matImg_drawContours.at<unsigned char>(it2->y, it2->x) = cpt;
+    vpImage<unsigned char> I_drawContours_opencv(I.getHeight(), I.getWidth(), 0);
+    for (std::vector<std::vector<cv::Point> >::const_iterator it1 = contours_opencv.begin(); it1 != contours_opencv.end(); ++it1) {
+      for (std::vector<cv::Point>::const_iterator it2 = it1->begin(); it2 != it1->end(); ++it2) {
+        I_drawContours_opencv[it2->y][it2->x] = 255;
       }
-
-//      break;
     }
 
-    printMat(matImg_drawContours, "matImg_drawContours");
-
-
-
-    vp::vpContour *vp_contours = NULL;
+    vp::vpContour vp_contours;
+    double t = vpTime::measureTimeMs();
     vp::extractContours(I, vp_contours);
-//    std::cout << "Root: " << (vp_contours->m_contourType == vp::BACKGROUND_CONTOUR) << std::endl;
+    t = vpTime::measureTimeMs() - t;
+
+    std::vector<std::vector<vpImagePoint> > contours;
+    displayContourInfo(vp_contours, 0, contours);
+    std::cout << "ViSP: nb contours=" << contours.size() << " ; t=" << t << " ms" << std::endl;
+
+    vpImage<unsigned char> I_drawContours(I.getHeight(), I.getWidth(), 0);
+    for (std::vector<std::vector<vpImagePoint> >::const_iterator it1 = contours.begin(); it1 != contours.end(); ++it1) {
+      for (std::vector<vpImagePoint>::const_iterator it2 = it1->begin(); it2 != it1->end(); ++it2) {
+        unsigned int i = (unsigned int) it2->get_i();
+        unsigned int j = (unsigned int) it2->get_j();
+        I_drawContours[i][j] = 255;
+      }
+    }
+
+    std::cout << "(I_drawContours_opencv == I_drawContours)? " << (I_drawContours_opencv == I_drawContours) << std::endl;
+
+    filename = vpIoTools::createFilePath(opath, "Klimt_contours_extracted.pgm");
+    vpImageIo::write(I_drawContours, filename);
+
+    filename = vpIoTools::createFilePath(opath, "Klimt_contours_extracted_opencv.pgm");
+    vpImageIo::write(I_drawContours_opencv, filename);
 
 
     return EXIT_SUCCESS;

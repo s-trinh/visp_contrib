@@ -1,20 +1,20 @@
-/**
+/****************************************************************************
  * Copyright (c) 2011, The University of Southampton and the individual contributors.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
  *
- *   * 	Redistributions of source code must retain the above copyright notice,
- * 	this list of conditions and the following disclaimer.
+ *   *  Redistributions of source code must retain the above copyright notice,
+ *  this list of conditions and the following disclaimer.
  *
- *   *	Redistributions in binary form must reproduce the above copyright notice,
- * 	this list of conditions and the following disclaimer in the documentation
- * 	and/or other materials provided with the distribution.
+ *   * Redistributions in binary form must reproduce the above copyright notice,
+ *  this list of conditions and the following disclaimer in the documentation
+ *  and/or other materials provided with the distribution.
  *
- *   *	Neither the name of the University of Southampton nor the names of its
- * 	contributors may be used to endorse or promote products derived from this
- * 	software without specific prior written permission.
+ *   * Neither the name of the University of Southampton nor the names of its
+ *  contributors may be used to endorse or promote products derived from this
+ *  software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
  * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -26,8 +26,7 @@
  * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
-/****************************************************************************
+ *
  *
  * This file is part of the ViSP software.
  * Copyright (C) 2005 - 2015 by Inria. All rights reserved.
@@ -64,8 +63,6 @@
  *
  *****************************************************************************/
 
-
-
 /*!
   \file vpContours.h
   \brief Basic contours extraction.
@@ -81,9 +78,8 @@
 namespace vp
 {
   typedef enum {
-    OUTER_CONTOUR,
-    HOLE_CONTOUR,
-    BACKGROUND_CONTOUR
+    CONTOUR_OUTER,
+    CONTOUR_HOLE
   } vpContourType;
 
   typedef enum {
@@ -91,40 +87,113 @@ namespace vp
   } vpDirectionType;
 
   struct vpContour {
-    vpContourType m_contourType;
     std::vector<vpContour *> m_children;
+    vpContourType m_contourType;
     vpContour *m_parent;
     std::vector<vpImagePoint> m_points;
 
-    vpContour() : m_contourType(vp::HOLE_CONTOUR), m_children(), m_parent(NULL), m_points() {
+    vpContour() :
+      m_children(), m_contourType(vp::CONTOUR_HOLE), m_parent(NULL), m_points() {
     }
 
-    vpContour(const vpContourType &type) : m_contourType(type) {
+    vpContour(const vpContourType &type) :
+      m_children(), m_contourType(type), m_parent(NULL), m_points() {
+    }
+
+    vpContour(const vpContour &contour) :
+      m_children(), m_contourType(contour.m_contourType), m_parent(NULL), m_points(contour.m_points) {
+
+      //Copy only the underlying contours
+      for (std::vector<vpContour *>::const_iterator it = contour.m_children.begin(); it != contour.m_children.end(); ++it) {
+        vpContour *copy = new vpContour( **it );
+        copy->m_parent = this;
+        m_children.push_back( copy );
+      }
+    }
+
+    ~vpContour() {
+      for (std::vector<vpContour *>::iterator it = m_children.begin(); it != m_children.end(); ++it) {
+        (*it)->m_parent = NULL;
+        if (*it != NULL) {
+          delete *it;
+          *it = NULL;
+        }
+      }
+    }
+
+    vpContour& operator=(const vpContour &other) {
+      m_contourType = other.m_contourType;
+
+      if (m_parent == NULL) {
+        //we are a root or an unintialized contour so delete everything
+        for (std::vector<vpContour*>::iterator it = m_children.begin(); it != m_children.end(); ++it) {
+          (*it)->m_parent = NULL;
+          if (*it != NULL) {
+            delete *it;
+            *it = NULL;
+          }
+        }
+      } else {
+        //make the current contour the root contour
+        //to avoid problem when deleting
+        m_parent = NULL;
+      }
+
+      m_children.clear();
+      for (std::vector<vpContour *>::const_iterator it = other.m_children.begin(); it != other.m_children.end(); ++it) {
+        vpContour *copy = new vpContour( **it );
+        copy->m_parent = this;
+        m_children.push_back( copy );
+      }
+
+      return *this;
     }
 
     void setParent(vpContour *parent) {
       m_parent = parent;
-      parent->m_children.push_back(this);
+
+      if (parent != NULL) {
+        parent->m_children.push_back(this);
+      }
+    }
+
+    void removeParent(vpContour *parent) {
+      m_parent = NULL;
+
+      if (parent != NULL) {
+        parent->m_children.erase(std::remove(parent->m_children.begin(), parent->m_children.end(), this), parent->m_children.end());
+      }
     }
   };
 
 
   struct vpDirection {
     vpDirectionType m_direction;
+    std::vector<std::string> m_directionName;
 
-    int dirx[8] = { 0, 1, 1, 1, 0, -1, -1, -1 };
-    int diry[8] = { -1, -1, 0, 1, 1, 1, 0, -1 };
+    int m_dirx[8];
+    int m_diry[8];
 
-//    static Direction[] entry = new Direction[] {
-//      WEST, WEST, NORTH, NORTH, EAST, EAST, SOUTH, SOUTH
-//    };
-//    static Direction[] ccentry = new Direction[] {
-//      EAST, SOUTH, SOUTH, WEST, WEST, NORTH, NORTH, EAST
-//    };
+    vpDirection() {
+      m_dirx[0] = 0; m_dirx[1] = 1;  m_dirx[2] = 1;  m_dirx[3] = 1;
+      m_dirx[4] = 0; m_dirx[5] = -1; m_dirx[6] = -1; m_dirx[7] = -1;
+
+      m_diry[0] = -1; m_diry[1] = -1; m_diry[2] = 0; m_diry[3] = 1;
+      m_diry[4] = 1;  m_diry[5] = 1;  m_diry[6] = 0; m_diry[7] = -1;
+
+      m_directionName.push_back("NORTH");
+      m_directionName.push_back("NORTH_EAST");
+      m_directionName.push_back("EAST");
+      m_directionName.push_back("SOUTH_EAST");
+      m_directionName.push_back("SOUTH");
+      m_directionName.push_back("SOUTH_WEST");
+      m_directionName.push_back("WEST");
+      m_directionName.push_back("NORTH_WEST");
+    }
 
     vpDirection clockwise() {
       vpDirection direction;
-      int directionSize = (int) LAST_DIRECTION;
+      int directionSize = LAST_DIRECTION;
       direction.m_direction = vpDirectionType ( ( (int) m_direction + 1) % directionSize );
 
       return direction;
@@ -134,17 +203,18 @@ namespace vp
       vpDirection direction;
       int directionSize = (int) LAST_DIRECTION;
       int idx = (int) m_direction - 1;
-      idx = idx < 0 ? idx + directionSize : idx;
+      idx = ((idx % directionSize) + directionSize) % directionSize;
+//      idx = idx < 0 ? idx + directionSize : idx;
       direction.m_direction = vpDirectionType ( idx );
 
       return direction;
     }
 
     vpImagePoint active(const vpImage<int> &I, const vpImagePoint &point) {
-      unsigned int yy = (unsigned int) (point.get_i() + diry[(int) m_direction]);
-      unsigned int xx = (unsigned int) (point.get_j() + dirx[(int) m_direction]);
+      int yy = (int) (point.get_i() + m_diry[(int) m_direction]);
+      int xx = (int) (point.get_j() + m_dirx[(int) m_direction]);
 
-      if (xx < 0 || xx >= I.getWidth() || yy < 0 || yy >= I.getHeight()) {
+      if (xx < 0 || xx >= (int) I.getWidth() || yy < 0 || yy >= (int) I.getHeight()) {
         return vpImagePoint(-1, -1);
       }
 
@@ -154,8 +224,7 @@ namespace vp
   };
 
 
-
-  VISP_EXPORT void extractContours(const vpImage<unsigned char> &I_original, vpContour *contour);
+  VISP_EXPORT void extractContours(const vpImage<unsigned char> &I_original, vpContour &contour);
 }
 
 #endif
