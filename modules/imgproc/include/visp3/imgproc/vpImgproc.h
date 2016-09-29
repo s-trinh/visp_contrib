@@ -1,7 +1,7 @@
 /****************************************************************************
  *
  * This file is part of the ViSP software.
- * Copyright (C) 2005 - 2015 by Inria. All rights reserved.
+ * Copyright (C) 2005 - 2016 by Inria. All rights reserved.
  *
  * This software is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -100,16 +100,6 @@ namespace vp
 
   VISP_EXPORT void connectedComponents(const vpImage<unsigned char> &I, vpImage<int> &labels, int &nbComponents,
                                        const vpConnectedConnexityType &connexity=CONNECTED_CONNEXITY_4);
-
-
-//  typedef enum {
-//    CONNECTED_CONNEXITY_4, /*!< For a given pixel 4 neighbors are considered (left,
-//                      right, up, down) */
-//    CONNECTED_CONNEXITY_8 /*!< For a given pixel 8 neighbors are considered (left,
-//                     right, up, down, and the 4 pixels located on the diagonal) */
-//  } vpConnectedConnexityType;
-
-//  VISP_EXPORT void extractContours(const vpImage<unsigned char> &I);
 }
 
 #endif
