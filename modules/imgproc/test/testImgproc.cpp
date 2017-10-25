@@ -41,15 +41,13 @@
 #include <visp3/core/vpIoTools.h>
 #include <visp3/core/vpMath.h>
 #include <visp3/imgproc/vpImgproc.h>
-#include <stdlib.h>
-#include <stdio.h>
-
+#include <cstdlib>
+#include <cstdio>
 
 /*!
   \example testImgproc.cpp
 
   \brief Test imgproc functions.
-
 */
 
 // List of allowed command line options
@@ -59,7 +57,6 @@ void usage(const char *name, const char *badparam, std::string ipath, std::strin
 bool getOptions(int argc, const char **argv, std::string &ipath, std::string &opath, std::string user);
 
 /*
-
   Print the program options.
 
   \param name : Program name.
@@ -67,7 +64,6 @@ bool getOptions(int argc, const char **argv, std::string &ipath, std::string &op
   \param ipath: Input image path.
   \param opath : Output image path.
   \param user : Username.
-
  */
 void usage(const char *name, const char *badparam, std::string ipath, std::string opath, std::string user)
 {
@@ -104,7 +100,6 @@ OPTIONS:                                               Default\n\
 }
 
 /*!
-
   Set the program options.
 
   \param argc : Command line number of parameters.
@@ -113,7 +108,6 @@ OPTIONS:                                               Default\n\
   \param opath : Output image path.
   \param user : Username.
   \return false if the program has to be stopped, true otherwise.
-
 */
 bool getOptions(int argc, const char **argv, std::string &ipath, std::string &opath, std::string user)
 {
@@ -144,16 +138,6 @@ bool getOptions(int argc, const char **argv, std::string &ipath, std::string &op
   }
 
   return true;
-}
-
-/*!
-  Using a look-up table, adjust the pixel intensities.
-
-  \param I : Input color image.
-  \param lut : Look-up table mapping for each intensity the new corresponding value.
-*/
-void lut_method(vpImage<vpRGBa> &I, const vpRGBa (&lut)[256]) {
-  I.performLut(lut);
 }
 
 int
@@ -187,7 +171,7 @@ main(int argc, const char ** argv)
 
     // Read the command line options
     if (getOptions(argc, argv, opt_ipath, opt_opath, username) == false) {
-      exit (-1);
+      return EXIT_FAILURE;
     }
 
     // Get the option values
@@ -211,7 +195,7 @@ main(int argc, const char ** argv)
                   << "ERROR:" << std::endl;
         std::cerr << "  Cannot create " << opath << std::endl;
         std::cerr << "  Check your -o " << opt_opath << " option " << std::endl;
-        exit(-1);
+        return EXIT_FAILURE;
       }
     }
 
@@ -236,7 +220,7 @@ main(int argc, const char ** argv)
                 << std::endl
                 << "  environment variable to specify the location of the " << std::endl
                 << "  image path where test images are located." << std::endl << std::endl;
-      exit(-1);
+      return EXIT_FAILURE;
     }
 
 
@@ -342,6 +326,18 @@ main(int argc, const char ** argv)
     vpImageIo::write(I_color_unsharp_mask, filename);
 
 
+    //CLAHE
+    vpImage<vpRGBa> I_color_clahe;
+    t = vpTime::measureTimeMs();
+    vp::clahe(I_color, I_color_clahe);
+    t = vpTime::measureTimeMs() - t;
+    std::cout << "Time to do color CLAHE: " << t << " ms" << std::endl;
+
+    //Save CLAHE
+    filename = vpIoTools::createFilePath(opath, "Klimt_CLAHE.ppm");
+    vpImageIo::write(I_color_clahe, filename);
+
+
 
     //
     //Test grayscale function using image0000.pgm
@@ -417,10 +413,21 @@ main(int argc, const char ** argv)
     vpImageIo::write(I_unsharp_mask, filename);
 
 
-    return 0;
-  }
-  catch(vpException &e) {
+    //CLAHE
+    vpImage<unsigned char> I_clahe;
+    t = vpTime::measureTimeMs();
+    vp::clahe(I, I_clahe);
+    t = vpTime::measureTimeMs() - t;
+    std::cout << "Time to do grayscale CLAHE: " << t << " ms" << std::endl;
+
+    //Save CLAHE
+    filename = vpIoTools::createFilePath(opath, "image0000_CLAHE.pgm");
+    vpImageIo::write(I_clahe, filename);
+
+
+    return EXIT_SUCCESS;
+  } catch(const vpException &e) {
     std::cerr << "Catch an exception: " << e.what() << std::endl;
-    return 1;
+    return EXIT_FAILURE;
   }
 }
